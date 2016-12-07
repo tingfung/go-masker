@@ -15,5 +15,5 @@ m, _ := masker.New(map[string]string{
   "password": "**********",
 })
 fmt.Printf("%s\n", m.Mask([]byte(`{"email":"foo@example.com","password":"p@ssw0rd"}`)))
-// -> {"email":"foo@example.com","password":"**********"}
+    // -> {"email":"foo@example.com","password":"**********"}
 ```
