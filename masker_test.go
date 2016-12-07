@@ -34,7 +34,7 @@ func TestMapper(t *testing.T) {
 			},
 		},
 		{
-			description: "none mapper",
+			description: "non-existing fields",
 			inputMapper: map[string]string{
 				"qux": "**********",
 			},
