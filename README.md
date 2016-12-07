@@ -1,6 +1,6 @@
 # go-masker [![CircleCI](https://circleci.com/gh/syoya/go-masker.svg?style=svg)](https://circleci.com/gh/syoya/go-masker)
 
-Mask fields in JSON.
+Masks fields in JSON.
 
 ## Features
 
