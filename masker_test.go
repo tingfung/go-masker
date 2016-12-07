@@ -89,7 +89,7 @@ func TestMapper(t *testing.T) {
 	}
 }
 
-func TestMaskWithDepth(t *testing.T) {
+func TestMaskDeep(t *testing.T) {
 	m, err := masker.New(map[string]string{
 		"password": "**********",
 	})
