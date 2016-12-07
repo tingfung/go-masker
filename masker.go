@@ -46,6 +46,9 @@ func (m Masker) maskAsObject(i []byte) ([]byte, error) {
 			o[k] = r
 			continue
 		}
+		if v == nil {
+			continue
+		}
 		r := json.RawMessage(m.Mask(*v))
 		o[k] = &r
 	}
@@ -59,6 +62,9 @@ func (m Masker) maskAsArray(i []byte) ([]byte, error) {
 	}
 
 	for i, v := range a {
+		if v == nil {
+			continue
+		}
 		r := json.RawMessage(m.Mask(*v))
 		a[i] = &r
 	}

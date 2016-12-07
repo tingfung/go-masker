@@ -241,6 +241,36 @@ func TestMaskDeep(t *testing.T) {
 				"qux2": "this shouldn't be masked",
 			},
 		},
+		{
+			description: "object contains nil (null in JSON)",
+			input: map[string]interface{}{
+				"qux":      "this shouldn't be masked",
+				"password": "this should be masked",
+				"oops":     nil,
+			},
+			expected: map[string]interface{}{
+				"qux":      "this shouldn't be masked",
+				"password": "**********",
+				"oops":     nil,
+			},
+		},
+		{
+			description: "array contains nil (null in JSON)",
+			input: []interface{}{
+				nil,
+				map[string]interface{}{
+					"qux":      "this shouldn't be masked",
+					"password": "this should be masked",
+				},
+			},
+			expected: []interface{}{
+				nil,
+				map[string]interface{}{
+					"qux":      "this shouldn't be masked",
+					"password": "**********",
+				},
+			},
+		},
 	}
 
 	for _, c := range cases {
