@@ -7,10 +7,10 @@ import (
 	"github.com/syoya/go-masker"
 )
 
-func TestMapper(t *testing.T) {
+func TestReplacementMapper(t *testing.T) {
 	type Case struct {
-		description string
-		inputMapper map[string]string
+		spec        string
+		replacement map[string]string
 		expected    interface{}
 	}
 
@@ -25,8 +25,8 @@ func TestMapper(t *testing.T) {
 
 	cases := []Case{
 		{
-			description: "none mapper",
-			inputMapper: map[string]string{},
+			spec:        "none mapper",
+			replacement: map[string]string{},
 			expected: map[string]interface{}{
 				"foo": 1,
 				"bar": 2,
@@ -34,8 +34,8 @@ func TestMapper(t *testing.T) {
 			},
 		},
 		{
-			description: "non-existing fields",
-			inputMapper: map[string]string{
+			spec: "non-existing fields",
+			replacement: map[string]string{
 				"qux": "**********",
 			},
 			expected: map[string]interface{}{
@@ -45,8 +45,8 @@ func TestMapper(t *testing.T) {
 			},
 		},
 		{
-			description: "single mapper",
-			inputMapper: map[string]string{
+			spec: "single mapper",
+			replacement: map[string]string{
 				"bar": "*****",
 			},
 			expected: map[string]interface{}{
@@ -56,8 +56,8 @@ func TestMapper(t *testing.T) {
 			},
 		},
 		{
-			description: "multi-mapper",
-			inputMapper: map[string]string{
+			spec: "multi-mapper",
+			replacement: map[string]string{
 				"foo": "",
 				"baz": "MASKED",
 			},
@@ -70,7 +70,7 @@ func TestMapper(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		m, err := masker.New(c.inputMapper)
+		m, err := masker.New(masker.Options{Replacement: c.replacement})
 		if err != nil {
 			t.Errorf("Fail to create masker with error `%s`", err)
 			continue
@@ -84,28 +84,30 @@ func TestMapper(t *testing.T) {
 		}
 
 		if string(a) != string(e) {
-			t.Errorf("Test with %s, masked JSON is expected `%s`, but actual `%s`", c.description, string(e), string(a))
+			t.Errorf("%s, masked JSON is expected `%s`, but actual `%s`", c.spec, string(e), string(a))
 		}
 	}
 }
 
-func TestMaskDeep(t *testing.T) {
-	m, err := masker.New(map[string]string{
-		"password": "**********",
+func TestReplacementDeep(t *testing.T) {
+	m, err := masker.New(masker.Options{
+		Replacement: map[string]string{
+			"password": "**********",
+		},
 	})
 	if err != nil {
 		t.Fatal("Fail to create masker with error `%s`", err)
 	}
 
 	type Case struct {
-		description string
-		input       interface{}
-		expected    interface{}
+		spec     string
+		input    interface{}
+		expected interface{}
 	}
 
 	cases := []Case{
 		{
-			description: "shallow object",
+			spec: "Mask() should replace a value in shallow object",
 			input: map[string]interface{}{
 				"qux":      "this shouldn't be masked",
 				"password": "this should be masked",
@@ -116,7 +118,7 @@ func TestMaskDeep(t *testing.T) {
 			},
 		},
 		{
-			description: "deep object",
+			spec: "Mask() should replace a value in deep object",
 			input: map[string]interface{}{
 				"foo": map[string]interface{}{
 					"bar": map[string]interface{}{
@@ -139,7 +141,7 @@ func TestMaskDeep(t *testing.T) {
 			},
 		},
 		{
-			description: "shallow array",
+			spec: "Mask() should replace a value in shallow array",
 			input: []interface{}{
 				map[string]interface{}{
 					"qux":      "this shouldn't be masked",
@@ -154,7 +156,7 @@ func TestMaskDeep(t *testing.T) {
 			},
 		},
 		{
-			description: "deep array",
+			spec: "Mask() should replace a value in deep array",
 			input: []interface{}{
 				[]interface{}{
 					[]interface{}{
@@ -177,7 +179,7 @@ func TestMaskDeep(t *testing.T) {
 			},
 		},
 		{
-			description: "complex data",
+			spec: "Mask() should replace values in complex data",
 			input: map[string]interface{}{
 				"qux0":     "this shouldn't be masked",
 				"password": "this should be masked",
@@ -242,7 +244,7 @@ func TestMaskDeep(t *testing.T) {
 			},
 		},
 		{
-			description: "object contains nil (null in JSON)",
+			spec: "Mask() should replace a value in object containing nil",
 			input: map[string]interface{}{
 				"qux":      "this shouldn't be masked",
 				"password": "this should be masked",
@@ -255,7 +257,7 @@ func TestMaskDeep(t *testing.T) {
 			},
 		},
 		{
-			description: "array contains nil (null in JSON)",
+			spec: "Mask() should replace a value in array containing nil",
 			input: []interface{}{
 				nil,
 				map[string]interface{}{
@@ -298,7 +300,202 @@ func TestMaskDeep(t *testing.T) {
 		}
 
 		if string(a) != string(e) {
-			t.Errorf("Test with %s, masked JSON is expected `%s`, but actual `%s`", c.description, string(e), string(a))
+			t.Errorf("%s, masked JSON is expected `%s`, but actual `%s`", c.spec, string(e), string(a))
+		}
+	}
+}
+
+func TestTrancation(t *testing.T) {
+	type Case struct {
+		spec       string
+		truncation masker.Truncation
+		input      interface{}
+		expected   interface{}
+	}
+
+	cases := []Case{
+		{
+			spec:       "Mask() shouldn't truncate a plain string less than specified length",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input:      "1234567890123456789",
+			expected:   "1234567890123456789",
+		},
+		{
+			spec:       "Mask() shouldn't truncate a plain string same as specified length",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input:      "12345678901234567890",
+			expected:   "12345678901234567890",
+		},
+		{
+			spec:       "Mask() should truncate a plain string over specified length",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input:      "123456789012345678901",
+			expected:   "12345678901234567890...",
+		},
+		{
+			spec:       "Mask() should truncate a value in shallow object",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input: map[string]interface{}{
+				"a": "abcde",
+				"b": "this should be truncated",
+			},
+			expected: map[string]interface{}{
+				"a": "abcde",
+				"b": "this should be trunc...",
+			},
+		},
+		{
+			spec:       "Mask() should truncate a value in deep object",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"baz": map[string]interface{}{
+							"a": "abcde",
+							"b": "this should be truncated",
+						},
+					},
+				},
+			},
+			expected: map[string]interface{}{
+				"foo": map[string]interface{}{
+					"bar": map[string]interface{}{
+						"baz": map[string]interface{}{
+							"a": "abcde",
+							"b": "this should be trunc...",
+						},
+					},
+				},
+			},
+		},
+		{
+			spec:       "Mask() should truncate a value in shallow array",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input: []string{
+				"abcde",
+				"this should be truncated",
+			},
+			expected: []string{
+				"abcde",
+				"this should be trunc...",
+			},
+		},
+		{
+			spec:       "Mask() should truncate a value in deep array",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input: []interface{}{
+				[]interface{}{
+					[]interface{}{
+						[]string{
+							"abcde",
+							"this should be truncated",
+						},
+					},
+				},
+			},
+			expected: []interface{}{
+				[]interface{}{
+					[]interface{}{
+						[]string{
+							"abcde",
+							"this should be trunc...",
+						},
+					},
+				},
+			},
+		},
+		{
+			spec:       "Mask() should truncate values in complex data",
+			truncation: masker.Truncation{Length: 20, Omission: "..."},
+			input: map[string]interface{}{
+				"qux0": "abcde",
+				"qux1": "this should be truncated",
+				"foo": map[string]interface{}{
+					"qux3": "abcde",
+					"qux4": "this should be truncated",
+					"bar": []interface{}{
+						"abcde",
+						map[string]interface{}{
+							"qux6": "abcde",
+							"baz": []interface{}{
+								"abcde",
+								map[string]interface{}{
+									"qux9":  "abcde",
+									"qux10": "this should be truncated",
+								},
+								"abcde",
+							},
+							"qux7": "abcde",
+							"qux8": "this should be truncated",
+						},
+						"abcde",
+					},
+					"qux5": "abcde",
+				},
+				"qux2": "abcde",
+			},
+			expected: map[string]interface{}{
+				"qux0": "abcde",
+				"qux1": "this should be trunc...",
+				"foo": map[string]interface{}{
+					"qux3": "abcde",
+					"qux4": "this should be trunc...",
+					"bar": []interface{}{
+						"abcde",
+						map[string]interface{}{
+							"qux6": "abcde",
+							"baz": []interface{}{
+								"abcde",
+								map[string]interface{}{
+									"qux9":  "abcde",
+									"qux10": "this should be trunc...",
+								},
+								"abcde",
+							},
+							"qux7": "abcde",
+							"qux8": "this should be trunc...",
+						},
+						"abcde",
+					},
+					"qux5": "abcde",
+				},
+				"qux2": "abcde",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		m, err := masker.New(masker.Options{Truncation: c.truncation})
+		if err != nil {
+			t.Errorf("Fail to create masker with error `%s`", err)
+			continue
+		}
+
+		i, err := json.Marshal(c.input)
+		if err != nil {
+			t.Errorf("Fail to marshal input with error `%s`", err)
+			continue
+		}
+
+		var actual interface{}
+		if err := json.Unmarshal(m.Mask(i), &actual); err != nil {
+			t.Errorf("Fail to unmarshal actual with error `%s`", err)
+			continue
+		}
+		a, err := json.Marshal(actual)
+		if err != nil {
+			t.Errorf("Fail to marshal actual with error `%s`", err)
+			continue
+		}
+
+		e, err := json.Marshal(c.expected)
+		if err != nil {
+			t.Errorf("Fail to marshal expected with error `%s`", err)
+			continue
+		}
+
+		if string(a) != string(e) {
+			t.Errorf("%s, masked JSON is expected `%s`, but actual `%s`", c.spec, e, a)
 		}
 	}
 }
