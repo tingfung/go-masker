@@ -7,11 +7,18 @@ import (
 )
 
 func main() {
-	m, err := masker.New(map[string]string{
-		"password": "**********",
+	m, err := masker.New(masker.Options{
+		Replacement: map[string]string{
+			"password": "***",
+		},
+		Truncation: masker.Truncation{
+			Length:   20,
+			Omission: "...",
+		},
 	})
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%s\n", m.Mask([]byte(`{"email":"foo@example.com","password":"p@ssw0rd"}`))) // -> {"email":"foo@example.com","password":"**********"}
+	fmt.Printf("%s\n", m.Mask([]byte(`{"password":"p@Ssw0rd","long":"this should be truncated"}`)))
+	//                             -> {"password":"***","long":"this should be trunc..."}
 }
