@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	masker "github.com/syoya/go-masker"
+	masker "github.com/tingfung/go-masker"
 )
 
 func main() {
@@ -19,6 +19,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%s\n", m.Mask([]byte(`{"password":"p@Ssw0rd","long":"this should be truncated"}`)))
-	//                             -> {"password":"***","long":"this should be trunc..."}
+	fmt.Printf("%s\n", m.Mask([]byte(`{"Password":"p@Ssw0rd","long":"this should be truncated"}`)))
+	//                             -> {"Password":"***","long":"this should be trunc..."}
 }

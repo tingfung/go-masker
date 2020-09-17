@@ -1,6 +1,9 @@
 package masker
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 type Replacement map[string]string
 
@@ -12,7 +15,7 @@ func (r Replacement) toRawMessageMap() (map[string]*json.RawMessage, error) {
 			return m, err
 		}
 		raw := json.RawMessage(b)
-		m[k] = &raw
+		m[strings.ToLower(k)] = &raw
 	}
 	return m, nil
 }
@@ -69,7 +72,8 @@ func (m Masker) maskAsObject(i []byte) ([]byte, error) {
 	}
 
 	for k, v := range o {
-		if r, ok := m.replacement[k]; ok {
+		lk := strings.ToLower(k)
+		if r, ok := m.replacement[lk]; ok {
 			o[k] = r
 			continue
 		}
